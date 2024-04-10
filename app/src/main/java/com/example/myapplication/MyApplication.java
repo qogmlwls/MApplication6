@@ -9,13 +9,11 @@ public class MyApplication extends Application {
 
     private final String TAG = "MyApplication";
 
-
     @Override
     public void onCreate() {
         super.onCreate();
         Log.i(TAG,"onCreate()");
         Toast.makeText(this, "MyApplication 생성", Toast.LENGTH_SHORT).show();
-
     }
 
     @Override
@@ -25,6 +23,7 @@ public class MyApplication extends Application {
         Toast.makeText(this, "MyApplication onTerminate", Toast.LENGTH_SHORT).show();
 
     }
+
 
 
 }

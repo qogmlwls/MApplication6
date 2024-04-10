@@ -39,9 +39,9 @@ public class MyService extends Service {
         Log.i(TAG,"onCreate() i : "+Integer.toString(i));
 
 //        Toast.makeText(this, "service 시작", Toast.LENGTH_SHORT).show();
-
 //        Intent intent = new Intent(MyService.this, MainActivity.class);
 //        startActivity(intent);
+
     }
 
     @Override
@@ -49,8 +49,6 @@ public class MyService extends Service {
         Log.i(TAG,"onStartCommand(Intent intent, int flags, int startId)");
         Toast.makeText(this, "service onStartCommand", Toast.LENGTH_SHORT).show();
 //        return Service.START_STICKY;
-
-
 
         Thread thread = new Thread(new Runnable() {
             @Override
@@ -95,8 +93,8 @@ public class MyService extends Service {
         }
         else{
             Toast.makeText(this, "1", Toast.LENGTH_SHORT).show();
-
         }
+
 ////        if(isRunning){
 ////
 ////        }
@@ -111,6 +109,9 @@ public class MyService extends Service {
         Log.i(TAG,"onDestroy()");
         i++;
         Log.i(TAG,"onCreate() i : "+Integer.toString(i));
+
+        Toast.makeText(this, "service onDestroy", Toast.LENGTH_SHORT).show();
+
     }
 
     @Override
