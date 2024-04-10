@@ -3,15 +3,20 @@ package com.example.myapplication;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.IBinder;
 import android.os.SystemClock;
 import android.util.Log;
 import android.widget.Toast;
 
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.Socket;
 
@@ -31,12 +36,68 @@ public class MyService extends Service {
     public MyService() {
     }
 
+
+
+    private BroadcastReceiver messageReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String message = intent.getStringExtra("message");
+            // TODO: 이 메시지를 사용하는 코드. 예: UI 업데이트
+//            sendMessageToActivity(message);]
+
+            // ** 쓰레드 필수 **
+            // android.os.NetworkOnMainThreadException
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+
+                    Log.d(TAG, "Thread run()");
+
+                    // 서버에 전송
+                    try {
+                        out.writeUTF(message);
+                    } catch (IOException e) {
+
+                        // java.lang.RuntimeException: java.io.EOFException
+                        // 서버와의 연결 종료
+                        Toast.makeText(context, "소켓 연결 끊김( 메세지 전송 중.)", Toast.LENGTH_SHORT).show();
+//                        throw new RuntimeException(e);
+                    }
+//                    catch (EOFException e) {
+//
+//                        // java.lang.RuntimeException: java.io.EOFException
+//                        // 서버와의 연결 종료
+//                        Toast.makeText(context, "소켓 연결 끊김", Toast.LENGTH_SHORT).show();
+//    //                        throw new RuntimeException(e);
+//                    }
+                }
+            });
+            thread.start();
+            Log.d(TAG, "Thread start()");
+
+
+
+        }
+    };
+
+
+
+    private void sendMessageToActivity(String message) {
+        Intent intent = new Intent("receiveChat");
+        intent.putExtra("message", message);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    }
+
+
     @Override
     public void onCreate() {
         super.onCreate();
         Log.i(TAG,"onCreate()");
         i++;
         Log.i(TAG,"onCreate() i : "+Integer.toString(i));
+
+        LocalBroadcastManager.getInstance(this).registerReceiver(messageReceiver,
+                new IntentFilter("sendChat"));
 
 //        Toast.makeText(this, "service 시작", Toast.LENGTH_SHORT).show();
 //        Intent intent = new Intent(MyService.this, MainActivity.class);
@@ -58,10 +119,25 @@ public class MyService extends Service {
 
                 try {
                     socket = new Socket(SERVER_IP, SERVER_PORT);
+                    in = new DataInputStream(socket.getInputStream());
+                    out = new DataOutputStream(socket.getOutputStream());
+
+                    Log.d(TAG, "Socket connect");
+
+                    while (true) { // 무한 루프
+                        String data = in.readUTF(); // UTF-8 문자열 읽기
+                        // 읽은 데이터를 처리하는 로직
+                        System.out.println(data);
+                        sendMessageToActivity(data);
+                    }
+
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+
+                    Toast.makeText(getApplicationContext(), "소켓 연결 끊김", Toast.LENGTH_SHORT).show();
+
+//                    throw new RuntimeException(e);
                 }
-                Log.d(TAG, "Socket connect");
+
 
             }
         });
@@ -111,6 +187,20 @@ public class MyService extends Service {
         Log.i(TAG,"onCreate() i : "+Integer.toString(i));
 
         Toast.makeText(this, "service onDestroy", Toast.LENGTH_SHORT).show();
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(messageReceiver);
+
+
+        try {
+
+            out.close();
+            in.close();
+
+            socket.close();
+
+        } catch (IOException e) {
+            Log.i(TAG,e.getMessage());
+//            throw new RuntimeException(e);
+        }
 
     }
 

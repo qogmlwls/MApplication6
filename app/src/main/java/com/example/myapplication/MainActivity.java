@@ -1,10 +1,13 @@
 package com.example.myapplication;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import android.app.ActivityManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.PowerManager;
@@ -21,9 +24,22 @@ public class MainActivity extends AppCompatActivity {
     private final String TAG = "MainActivity";
     SharedPreferencesManager sharedPreferencesManager;
 
-    Button 전송버튼, 로그아웃;
+    Button 전송버튼, 로그아웃,내가보낸채팅버튼;
     EditText 입력뷰;
-    TextView 채팅텍스트뷰;
+    TextView 채팅텍스트뷰,내가보낸채팅;
+
+
+    private BroadcastReceiver messageReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String message = intent.getStringExtra("message");
+            // TODO: 이 메시지를 사용하는 코드. 예: UI 업데이트
+            채팅텍스트뷰.setText(채팅텍스트뷰.getText().toString() + "\n" + message);
+
+
+        }
+    };
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,6 +54,8 @@ public class MainActivity extends AppCompatActivity {
         입력뷰 = findViewById(R.id.editTextText);
         채팅텍스트뷰 = findViewById(R.id.textView1);
         로그아웃 = findViewById(R.id.button);
+        내가보낸채팅 = findViewById(R.id.textView);
+        내가보낸채팅버튼 = findViewById(R.id.button5);
 
 
         로그아웃.setOnClickListener(new View.OnClickListener() {
@@ -59,12 +77,30 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
+        내가보낸채팅버튼.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                if(내가보낸채팅.getVisibility() == View.VISIBLE){
+                    내가보낸채팅.setVisibility(View.GONE);
+                }
+                else{
+                    내가보낸채팅.setVisibility(View.VISIBLE);
+                }
+
+            }
+        });
+
+
         전송버튼.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
 
-
+                String 메세지 = 입력뷰.getText().toString();
+                내가보낸채팅.setText(내가보낸채팅.getText().toString() + "\n" + 메세지);
+                sendMessageToActivity(입력뷰.getText().toString());
+                입력뷰.setText("");
 
             }
         });
@@ -152,6 +188,23 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    private void sendMessageToActivity(String message) {
+        Intent intent = new Intent("sendChat");
+        intent.putExtra("message", message);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        LocalBroadcastManager.getInstance(this).registerReceiver(messageReceiver,
+                new IntentFilter("receiveChat"));
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(messageReceiver);
+    }
 
 }
